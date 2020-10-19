@@ -1,0 +1,17 @@
+{
+	"common":{
+		"mnemonic":"spawn elbow destroy glove wet pulp hundred avocado salt grace sister ten",
+		"masterAddress":"0x3126D8380aB928aa357912DDFA60E4c225e53dF3",
+		"masterPrivateKey":"8fae32933f6e5ec55ffc7b2645abbdec04395508fd72ebfe13b1f6189035c7cf",
+		"infuraKey":"12e7750ba7e54d04afb1df705d919618",
+		"infuraUrl":"https://ropsten.infura.io/v3/",
+		"etherscanUrl":"https://api-ropsten.etherscan.io/",
+		"etherscanKey":"TRF47IEMM99Y2GIF1RQP8Z39BDUA21MPY9",
+		"USDCTokenAddress":"0x07865c6E87B9F70255377e024ace6630C1Eaa37F",
+		"FAUTokenAddress":"0xFab46E002BbF0b4509813474841E0716E6730136",
+		"WBTCTokenAddress":"0x848bd26985e7565c8c91621845576c88384ed0d5",
+		"RenBTCTokenAddress":"0xec563c69a330d347d5ac3218f36f0b6d6863ddb0",
+		"EthTokenAddress": "0xac7fa82f7b2937b0714a61c84fa9902224ad5a65"
+	}
+	
+}

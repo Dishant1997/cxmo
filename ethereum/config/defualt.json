@@ -1,0 +1,10 @@
+{
+	"common":{
+		"mnemonic":"spawn elbow destroy glove wet pulp hundred avocado salt grace sister ten",
+		"infuraKey":"12e7750ba7e54d04afb1df705d919618",
+		"etherscanKey":"9b35c951290c4af8ba444cb31b78c9b7",
+		"infuraUrl":"https://ropsten.infura.io/v3/",
+		"etherscanUrl":"https://api-ropsten.etherscan.io/"
+	}
+	
+}
