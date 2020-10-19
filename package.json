@@ -2,7 +2,7 @@
     "name": "api",
     "version": "1.0.0",
     "description": "CXMO API",
-    "main": "app.js",
+    "main": "web3.js",
     "engines": {
         "node": ">=8",
         "npm": ">=5"
@@ -11,7 +11,8 @@
         "lint": "eslint .",
         "pretest": "npm run lint",
         "test": "nyc mocha --recursive",
-        "start": "nodemon ./bin/www",
+        "start": "node ./bin/www",
+        "build": "npm install",
         "heroku-postbuild": "npm run build"
     },
     "author": "Dishant Shah",
