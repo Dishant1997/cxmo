@@ -10,8 +10,8 @@
     "scripts": {
         "lint": "eslint .",
         "pretest": "npm run lint",
-        "test": "nyc mocha --recursive",
         "start": "node ./bin/www",
+        "test": "nyc mocha --recursive",
         "heroku-prebuild": "npm install",
         "heroku-postbuild": "npm run build"
     },
