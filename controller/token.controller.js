@@ -25,16 +25,17 @@ const { getTnxHistory, getEtherBalance } = require('../services/transaction.serv
       await Promise.all([USDCBalance, FAUBalance, WBTCBalance, RenBTCBalance, EtherBalance])
       .then(data => {
       const respObj = {
-          USDCBalance: data[0],
-          FAUBalance: data[1],
-          WBTCBalance: data[2],
-          RenBTCBalance: data[3],
-          EtherBalance: data[4],
-          USDCBalanceInUSD: data[0]*response[0][7],
-          WBTCBalanceInUSD: data[2]*response[1][7],
-          RenBTCBalanceInUSD: data[3]*response[3][7],
-          EtherBalanceInUSD: data[4]*response[2][7],
-          Total: data[0]*response[0][7] + data[2]*response[1][7] + data[3]*response[3][7] + data[4]*response[2][7]
+          USDCBalance: data[0].toFixed(2),
+          FAUBalance: data[1].toFixed(2),
+          WBTCBalance: data[2].toFixed(2),
+          RenBTCBalance: data[3].toFixed(2),
+          EtherBalance: data[4].toFixed(2),
+          USDCBalanceInUSD: (data[0]*response[0][7]).toFixed(2),
+          FAUBalanceInUSD: (data[1]*0.02).toFixed(2),
+          WBTCBalanceInUSD: (data[2]*response[1][7]).toFixed(2),
+          RenBTCBalanceInUSD: (data[3]*response[3][7]).toFixed(2),
+          EtherBalanceInUSD: (data[4]*response[2][7]).toFixed(2),
+          Total: (data[0]*response[0][7] + data[2]*response[1][7] + data[3]*response[3][7] + data[4]*response[2][7]).toFixed(2)
       }
 
       const walletdata = respObj;
