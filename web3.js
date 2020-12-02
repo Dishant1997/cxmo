@@ -5,7 +5,7 @@ const infuraUrl = config.infuraUrl;
 const infuraKey = config.infuraKey;
 const mnemonic = config.mnemonic;
 
-console.log(mnemonic)
+console.log("Mnemonic:",mnemonic)
 console.log(infuraUrl+infuraKey)
 const web3 = new Web3(infuraUrl+infuraKey);
 

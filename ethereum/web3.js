@@ -1,9 +1,9 @@
 const HDWalletProvider = require("@truffle/hdwallet-provider");
 const Web3 = require("web3");
-const config = require('config')
-const infuraUrl = config.get('common.infuraUrl')
-const infuraKey = config.get('common.infuraKey')
-const mnemonic = config.get('common.mnemonic')
+var config = require('./config/default.json').common;
+const infuraUrl = config.infuraUrl;
+const infuraKey = config.infuraKey;
+const mnemonic = config.mnemonic;
 
 console.log(mnemonic)
 console.log(infuraUrl+infuraKey)

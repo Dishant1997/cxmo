@@ -11,7 +11,11 @@ const video = require('./video.routes');
 /** authentication api */
 const auth = require('./authentication.routes');
 
+/** Payment api */
+const payment = require('./payment.routes');
 
+/** Common api */
+const common = require('./common.routes');
 
 /** Tour Pacakages api */
 
@@ -27,7 +31,9 @@ router.use('/api/v1/about', about);
 router.use('/api/v1/video', video);
 router.use('/api/v1/', auth); 
 router.use('/api/v1/tour',tour_pacakges);
-router.use('/api/v1/user',user)
+router.use('/api/v1/user',user);
+router.use('/api/v1/payment',payment);
+router.use('/api/v1/common',common);
  
 
 module.exports = router; 

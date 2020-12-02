@@ -6,6 +6,8 @@ var VerifyToken = require('../middleware/VerifyToken');
 
 const {
     balance,
+    balanceUser,
+    balanceAdmin,
     history,
     info,
     transfer,
@@ -16,6 +18,8 @@ const {
 } = require('../controller/token.controller');
 
 router.get('/balance', VerifyToken, balance);
+router.get('/user/balance/', balanceUser);
+router.get('/admin/balance/', balanceAdmin);
 router.get('/history', VerifyToken, history);
 router.get('/info' , VerifyToken, info);
 router.get('/transaction', VerifyToken, getTransaction)

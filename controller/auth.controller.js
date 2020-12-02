@@ -11,6 +11,8 @@ const { createWallet, verifyMnemonic } = require('../services/wallet.service');
 const multer = require('multer');
 const upload = multer(); 
 var path = require('path'); 
+const fireBase = require('../helpers/firebaseHelper');
+
 app.use('/profile',express.static(path.join(__dirname,'/profile')));  
 //update about us  
 module.exports.userRegister = async (req, res) => { 
@@ -20,7 +22,9 @@ module.exports.userRegister = async (req, res) => {
     }
     var data = req.body; var insertQuery ='';
     // verfiy Email
-    var checkEmailQuery = `select * from users WHERE email = '${data.email}' OR username = '${data.username}'`;
+    var checkEmailQuery = `select * from users WHERE LOWER(email) = LOWER('${data.email}') OR username = LOWER('${data.username}')`;
+  //  var checkEmailQuery = `select * from users  WHERE email ILIKE  '%${data.email}%' OR username ILIKE '%${data.username}%'`;
+    console.log(checkEmailQuery);
     var checkData = await db.pool.query(checkEmailQuery);
     var checkMobileQuery = `select * from users WHERE mobile_number = '${data.mobile_number}'`;
     var checkMobileData = await db.pool.query(checkMobileQuery);
@@ -116,7 +120,7 @@ module.exports.userLogin = async (req, res) => {
         return res.status(statusConfig.status.unprocessable).json({status: statusConfig.errorMessage.status, errors: errors.array() });
     }
     var data = req.body;
-    var selectQuery = `select * from users where username = '${data.username}'`;
+    var selectQuery = `select * from users where LOWER(username) = LOWER('${data.username}')`;
     var getData = await db.pool.query(selectQuery);  
     try{ 
         if(getData.rows.length>0){ 
@@ -197,12 +201,24 @@ module.exports.userProfile = async (req,res) => {
     var selectQuery = `select * from users where user_id = '${userId}'`;
     try{
         var getData = await db.pool.query(selectQuery);
-        res.status(statusConfig.status.success) 
+
+        if(getData.rows.length==1)
+        {
+            res.status(statusConfig.status.success) 
+            .json({   
+                status: statusConfig.successMessage.status,
+                message: 'Records are found', 
+                data: getData.rows[0],   
+            });
+        }else{
+            res.status(statusConfig.status.unauthorized) 
         .json({   
             status: statusConfig.successMessage.status,
-            message: 'Records are found', 
-            data: getData.rows[0],   
+            message: 'no Records are found', 
+            
         });
+        }
+        
     } catch(err) {   
         console.log(err);
         res.status(statusConfig.status.error)
@@ -233,8 +249,10 @@ module.exports.updateProfile = async (req,res) => {
         updateQuery += `,last_name ='${data.last_name}'`;
     }
     if (file) {   
-        console.log(file); 
-        updateQuery += `,profile_pic ='${file.originalname}'`;  
+
+        var url=await fireBase.uploadImageToStorage (file)
+        console.log(url); 
+        updateQuery += `,profile_pic ='${url}'`;  
     } 
     updateQuery += ` where user_id = '${userId}'`;   
      
@@ -283,7 +301,7 @@ module.exports.getSocialLogin= async (req,res) => {
                 data:getData.rows[0] 
             });   
         }else{
-            res.status(statusConfig.status.notfound)  
+            res.status(statusConfig.status.unauthorized)  
             .json({ 
                 status: statusConfig.successMessage.status,
                 message: 'User not found, please proceed with register', 
@@ -317,25 +335,23 @@ module.exports.changePassword=async (req, res) => {
     }
 
     const userId = req.userId;
+    var data = req.body;
 
     if(typeof data.password !== 'undefined' && data.password.length>0){
        
-        var hashedPassword = bcrypt.hashSync(data.password, 8);  
-        value.push(`'${hashedPassword}'`); 
-    } 
+        var hashedPassword = bcrypt.hashSync(data.password, 8); 
+     var   updateQuery = 'update users set ';
 
-    updateQuery += 'update users set ';
+    updateQuery += ` password ='${hashedPassword}'`; 
 
-    updateQuery += ` password ='${data.password}'`; 
-
-    updateQuery += ` where user_id = '${userId}'`;  
+    updateQuery += ` where user_id = '${userId}'`; 
 
     try {   
         await db.pool.query(updateQuery);
         res.status(statusConfig.status.success)
         .json({  
             status: statusConfig.successMessage.status,
-            message: 'T has been updated' 
+            message: 'Password has been updated' 
         });  
     } catch (err) {  
         console.log(err);
@@ -346,6 +362,12 @@ module.exports.changePassword=async (req, res) => {
             message: statusConfig.errorMessage.something_went
         });
     }
+        
+    } 
+
+      
+
+    
 
 }
 

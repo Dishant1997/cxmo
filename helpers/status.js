@@ -1,5 +1,7 @@
-const successMessage = { status: 'success' }; 
-const errorMessage = { status: 'error',something_went:'something went wrong' };
+const successMessage = { status: 'success',fail:'FAIL' }; 
+const failMessage = {status:'faIL'};
+const noteFoundMessage={status:'FAIL',not_found:'Not Found'};
+const errorMessage = { status: 'error',something_went:'something went wrong',not_found:'Not Found' };
 const status = {
   success: 200,
   error: 500,
@@ -22,4 +24,6 @@ module.exports = {
   errorMessage,
   status,
   trip_statuses,
+  failMessage,
+  noteFoundMessage
 };

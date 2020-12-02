@@ -8,13 +8,17 @@ const express = require('express');
 const upload = multer(); 
 const app = express();
 var path = require('path'); 
+const fireBase = require('../helpers/firebaseHelper');
 app.use('/tours',express.static(path.join(__dirname,'/tours')));  
 
 
-//get about us
+
+
+
+//get Categories us
 module.exports.getTourCategories = async (req, res) => {
     var data = req.body;
-    var getData = await db.pool.query("select * from tour_categories order by tour_categories_id desc")
+    var getData = await db.pool.query("select * from tour_categories where is_deleted=0 order by tour_categories_id desc ")
     .then(function (data) { 
         res.set({ 'content-type': 'application/json' });
         if(data.rows.length>0){
@@ -29,13 +33,14 @@ module.exports.getTourCategories = async (req, res) => {
             .json({ 
                 status: statusConfig.successMessage.status,
                 message: 'Records not found',
-                data: [],
+               
             });
         }
         
     }) 
     .catch(function (err) { 
         // return next(err);
+        console.log(err);
         res.status(statusConfig.status.error)
         .json({ 
             status: statusConfig.errorMessage.status,
@@ -45,6 +50,162 @@ module.exports.getTourCategories = async (req, res) => {
     }); 
     
 }
+
+
+//Delete Categories
+
+module.exports.deleteCategor=async (req, res) => {
+
+    try{
+        var getCatory=`select count(*) from tour_categories  where tour_categories_id = '${req.params.tour_categories_id}'`;
+        var getData=await db.pool.query(getCatory);
+
+        if(getData.rows[0].count>0)
+        {
+            var update=`update tour_categories set is_deleted=1 where tour_categories_id = '${req.params.tour_categories_id}'`;
+            var executeUpdate=await db.pool.query(update);
+            var disableTour=`update tour_pacakage set is_deleted=1 where tour_categories_id = '${req.params.tour_categories_id}'`;
+            var executeUpdate=await db.pool.query(disableTour);
+
+            res.status(statusConfig.status.success)
+            .json({  
+                status: statusConfig.successMessage.status,
+                message: 'Tour Category category is deleted',
+                
+            });
+        }else{
+            res.status(statusConfig.status.conflict)
+        .json({ 
+            status: statusConfig.errorMessage.fail,
+            data: err,
+            message: statusConfig.errorMessage.notfound
+        });
+        }
+
+        
+
+    }catch (err) {
+
+        res.status(statusConfig.status.error)
+        .json({ 
+            status: statusConfig.errorMessage.status,
+            data: err,
+            message: statusConfig.errorMessage.something_went
+        });
+
+    }
+
+
+}
+
+
+//Delete Tour Tag
+
+
+
+module.exports.deleteTag=async (req, res) => {
+
+    try{
+        var getCatory=`select count(*) from tour_tags  where tour_tags_id = '${req.params.tour_tags_id}'`;
+        var getData=await db.pool.query(getCatory);
+
+        if(getData.rows[0].count>0)
+        {
+            var update=`update tour_tags set is_deleted=1 where tour_tags_id = '${req.params.tour_tags_id}'`;
+            var executeUpdate=await db.pool.query(update);
+            var disableTour=`update tour_pacakage set is_deleted=1 where tour_tags_id = '${req.params.tour_tags_id}'`;
+            var executeUpdate=await db.pool.query(disableTour);
+
+            res.status(statusConfig.status.success)
+            .json({  
+                status: statusConfig.successMessage.status,
+                message: 'Tour Tag is deleted',
+                
+            });
+        }else{
+            res.status(statusConfig.status.conflict)
+        .json({ 
+            status: statusConfig.errorMessage.fail,
+            data: err,
+            message: statusConfig.errorMessage.notfound
+        });
+        }
+
+        
+
+    }catch (err) {
+
+        res.status(statusConfig.status.error)
+        .json({ 
+            status: statusConfig.errorMessage.status,
+            data: err,
+            message: statusConfig.errorMessage.something_went
+        });
+
+    }
+
+
+}
+
+
+
+//Add Tour Tags
+
+
+module.exports.addTourTags = async (req, res) => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      
+        return res.status(statusConfig.status.unprocessable).json({status: statusConfig.errorMessage.status,message:"Values cannot be blank. Please check request parameter",errors: errors.array() });
+    }
+    var data = req.body;
+
+    var checkCategory = `select count(*) from tour_tags WHERE LOWER(tag_name) = LOWER('${data.tag_name}') `;
+console.log(checkCategory);
+    var checkCategoryData= await db.pool.query(checkCategory);
+
+    console.log(checkCategoryData.rows[0].count);
+    if(checkCategoryData.rows[0].count<=0)
+    {
+
+        var getData = await db.pool.query("INSERT INTO tour_tags(tag_name) values($1) RETURNING *",[data.tag_name])
+        .then(function (data) { 
+            res.set({ 'content-type': 'application/json' });
+            res.status(statusConfig.status.success)
+            .json({  
+                status: statusConfig.successMessage.status,
+                message: 'Tour Tag category created',
+                data: data.rows,
+            });
+        }) 
+        .catch(function (err) { 
+            // return next(err);
+            res.status(statusConfig.status.error)
+            .json({ 
+                status: statusConfig.errorMessage.status,
+                data: err,
+                message: statusConfig.errorMessage.something_went
+            });
+        }); 
+
+    }else{
+        res.set({ 'content-type': 'application/json' });
+            res.status(statusConfig.status.conflict)
+            .json({  
+                status: statusConfig.successMessage.fail,
+                message: data.tag_name+' already exist',
+                
+            });
+    }
+
+    
+    
+}
+
+
+
+
+
 
 
 
@@ -58,13 +219,77 @@ module.exports.addTourCategories = async (req, res) => {
         return res.status(statusConfig.status.unprocessable).json({status: statusConfig.errorMessage.status,message:"Values cannot be blank. Please check request parameter",errors: errors.array() });
     }
     var data = req.body;
-    var getData = await db.pool.query("INSERT INTO tour_categories(tour_category_name) values($1) RETURNING *",[data.tour_category_name])
+
+    var checkCategory = `select count(*) from tour_categories WHERE LOWER(tour_category_name) = LOWER('${data.tour_category_name}') `;
+console.log(checkCategory);
+    var checkCategoryData= await db.pool.query(checkCategory);
+
+    console.log(checkCategoryData.rows[0].count);
+    if(checkCategoryData.rows[0].count<=0)
+    {
+
+        var getData = await db.pool.query("INSERT INTO tour_categories(tour_category_name) values($1) RETURNING *",[data.tour_category_name])
+        .then(function (data) { 
+            res.set({ 'content-type': 'application/json' });
+            res.status(statusConfig.status.success)
+            .json({  
+                status: statusConfig.successMessage.status,
+                message: 'Tour Category category created',
+                data: data.rows,
+            });
+        }) 
+        .catch(function (err) { 
+            // return next(err);
+            res.status(statusConfig.status.error)
+            .json({ 
+                status: statusConfig.errorMessage.status,
+                data: err,
+                message: statusConfig.errorMessage.something_went
+            });
+        }); 
+
+    }else{
+        res.set({ 'content-type': 'application/json' });
+            res.status(statusConfig.status.conflict)
+            .json({  
+                status: statusConfig.successMessage.fail,
+                message: data.tour_category_name+' already exist',
+                
+            });
+    }
+
+    
+    
+}
+
+
+
+
+
+//update Tag
+
+module.exports.updateTourTag = async (req, res) => {
+
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      
+        return res.status(statusConfig.status.unprocessable).json({status: statusConfig.errorMessage.status,message:"Values cannot be blank. Please check request parameter",errors: errors.array() });
+    }
+    var data = req.body;
+
+    updateQuery = 'update tour_tags set ';
+    
+    updateQuery += ` tag_name ='${data.tag_name}'`; 
+
+    updateQuery += ` where tour_tags_id = '${data.tag_name}'`; 
+    console.log("updateQuery "+updateQuery);
+    var getData = await db.pool.query(updateQuery)
     .then(function (data) { 
         res.set({ 'content-type': 'application/json' });
         res.status(statusConfig.status.success)
         .json({  
             status: statusConfig.successMessage.status,
-            message: 'Tour Category category created',
+            message: 'Tour tag is updated successfully',
             data: data.rows,
         });
     }) 
@@ -79,6 +304,10 @@ module.exports.addTourCategories = async (req, res) => {
     }); 
     
 }
+
+
+
+
 
 
 //update Category
@@ -104,7 +333,7 @@ module.exports.updateTourCategories = async (req, res) => {
         res.status(statusConfig.status.success)
         .json({  
             status: statusConfig.successMessage.status,
-            message: 'Tour Category category created',
+            message: 'Tour Category category is updated successfully',
             data: data.rows,
         });
     }) 
@@ -181,23 +410,25 @@ module.exports.updateTour= async (req,res) => {
 
     updateQuery += `, tour_categories_id ='${data.tour_categories_id}'`; 
 
-    updateQuery += `, itinerary ='${data.itinerary}'`; 
+    updateQuery += `, itinerary ='${common.stringReplace(data.itinerary)}'`; 
 
     updateQuery += `, duration ='${data.duration}'`; 
 
     updateQuery += `, ratings ='${data.ratings}'`; 
 
     updateQuery += `, tour_tags_id ='${data.tour_tags_id}'`; 
-    updateQuery += `, package_price ='${data.package_price}'`; 
-    updateQuery += `, tour_overview ='${data.tour_overview}'`; 
+    var price=parseFloat(data.package_price.replace(/,/g, ''));
+    updateQuery += `, package_price ='${price}'`; 
+    
+    updateQuery += `, tour_overview ='${common.stringReplace(data.tour_overview)}'`; 
 
 
     if(req.files.tour_thumb!=null)
     {
         const   tour_thumb=req.files.tour_thumb[0].originalname;
-        
-        if(typeof tour_thumb !== 'undefined' && tour_thumb.length>0){
-            updateQuery += `, tour_thumb ='${tour_thumb}'`;  
+        var thumb_url=await fireBase.uploadImageToStorage (req.files.tour_thumb[0]);
+        if(typeof thumb_url !== 'undefined' && thumb_url.length>0){
+            updateQuery += `, tour_thumb ='${thumb_url}'`;  
         } 
     }else{
         console.log("console.log(tour_thumb);");
@@ -220,8 +451,10 @@ module.exports.updateTour= async (req,res) => {
 
             if(req.files.tour_gallery!=null)
             {
+                
                 for (let index = 0; index < req.files.tour_gallery.length; index++) {
-                    await updateTourGallery(req.files.tour_gallery[0].originalname,tour_pacakage_id);
+                    var gallery_url=await fireBase.uploadImageToStorage (req.files.tour_gallery[index]);
+                    await updateTourGallery(gallery_url,tour_pacakage_id);
                 }
             }
 
@@ -312,7 +545,8 @@ module.exports.addTour= async (req,res) => {
 
     if(typeof data.itinerary !== 'undefined' && data.itinerary.length>0){
         set.push('itinerary');
-        value.push(`'${data.itinerary}'`); 
+       
+        value.push(`'${common.stringReplace(data.itinerary)}'`); 
     } else{
         return res.status(statusConfig.status.unprocessable).json({status: statusConfig.errorMessage.status,message:"Itinerary is required" });
     }
@@ -326,7 +560,8 @@ module.exports.addTour= async (req,res) => {
 
     if(typeof data.tour_overview !== 'undefined' && data.tour_overview.length>0){
         set.push('tour_overview');
-        value.push(`'${data.tour_overview}'`); 
+        
+        value.push(`'${common.stringReplace(data.tour_overview)}'`); 
     } else{
         return res.status(statusConfig.status.unprocessable).json({status: statusConfig.errorMessage.status,message:"tour_overview is required" });
     }
@@ -351,8 +586,9 @@ module.exports.addTour= async (req,res) => {
     }
 
     if(typeof data.package_price !== 'undefined' && data.package_price.length>0){
+        var price=parseFloat(data.package_price.replace(/,/g, ''));
         set.push('package_price');
-        value.push(`'${data.package_price}'`); 
+        value.push(`'${price}'`); 
     } else{
         return res.status(statusConfig.status.unprocessable).json({status: statusConfig.errorMessage.status,message:"package_price is required" });
     }
@@ -360,10 +596,12 @@ module.exports.addTour= async (req,res) => {
     if(req.files.tour_thumb!=null)
     {
         const   tour_thumb=req.files.tour_thumb[0].originalname;
-        console.log(tour_thumb);
-        if(typeof tour_thumb !== 'undefined' && tour_thumb.length>0){
+       
+        const thumb_url=await fireBase.uploadImageToStorage(req.files.tour_thumb[0]);
+        console.log(thumb_url);
+       if(typeof thumb_url !== 'undefined' && thumb_url.length>0){
             set.push('tour_thumb');
-            value.push(`'${tour_thumb}'`); 
+            value.push(`'${thumb_url}'`); 
         } else{
             return res.status(statusConfig.status.unprocessable).json({status: statusConfig.errorMessage.status,message:"Thumbnail  is required" });
         }
@@ -390,7 +628,10 @@ module.exports.addTour= async (req,res) => {
             if(req.files.tour_gallery!=null)
             {
             for (let index = 0; index < req.files.tour_gallery.length; index++) {
-                await updateTourGallery(req.files.tour_gallery[index].originalname,tour_pacakage_id);
+
+                var gallery_url=await fireBase.uploadImageToStorage(req.files.tour_gallery[index]);
+
+                await updateTourGallery(gallery_url,tour_pacakage_id);
             }
 
                 var gallery=await getTourPacageGallery(tour_pacakage_id);
@@ -433,30 +674,30 @@ module.exports.getTour=async (req, res) => {
     let offset = (page-1)*limit;
     
     //selectQuery = 'select * from tour_pacakage  inner join tour_categories on tour_categories.tour_categories_id=tour_pacakage.tour_categories_id';
-    selectQuery = 'select * from tour_pacakage  inner join tour_categories on tour_categories.tour_categories_id=tour_pacakage.tour_categories_id inner join  tour_tags on tour_tags.tour_tags_id=tour_pacakage.tour_tags_id';
-    countQuery = 'select count(*) from tour_pacakage ';
+    selectQuery = 'select * from tour_pacakage  inner join tour_categories on tour_categories.tour_categories_id=tour_pacakage.tour_categories_id inner join  tour_tags on tour_tags.tour_tags_id=tour_pacakage.tour_tags_id where tour_pacakage.is_deleted=0';
+    countQuery = 'select count(*) from tour_pacakage where tour_pacakage.is_deleted=0';
     if(typeof data.tour_categories_id !== 'undefined' && data.tour_categories_id.length>0 && typeof data.tour_tags_id !== 'undefined' && data.tour_tags_id.length>0){
-        selectQuery += ` where tour_pacakage.tour_categories_id ='${data.tour_categories_id}'`;
+        selectQuery += `  and tour_pacakage.tour_categories_id ='${data.tour_categories_id}'`;
         selectQuery += ` and tour_pacakage.tour_tags_id ='${data.tour_tags_id}'`;
 
 
-        countQuery += ` where tour_pacakage.tour_categories_id ='${data.tour_categories_id}'`;
+        countQuery += `  and tour_pacakage.tour_categories_id ='${data.tour_categories_id}'`;
         countQuery += ` and tour_pacakage.tour_tags_id ='${data.tour_tags_id}'`; 
     } else{
         if(typeof data.tour_categories_id !== 'undefined' && data.tour_categories_id.length>0){
-            selectQuery += ` where tour_pacakage.tour_categories_id ='${data.tour_categories_id}'`;
-            countQuery += ` where tour_pacakage.tour_categories_id ='${data.tour_categories_id}'`;
+            selectQuery += ` and  tour_pacakage.tour_categories_id ='${data.tour_categories_id}'`;
+            countQuery += `  and tour_pacakage.tour_categories_id ='${data.tour_categories_id}'`;
         } 
 
         if(typeof data.tour_tags_id !== 'undefined' && data.tour_tags_id.length>0){
-            selectQuery += ` where tour_pacakage.tour_tags_id ='${data.tour_tags_id}'`;
-            countQuery += ` where tour_pacakage.tour_tags_id ='${data.tour_tags_id}'`;
+            selectQuery += ` and tour_pacakage.tour_tags_id ='${data.tour_tags_id}'`;
+            countQuery += ` and tour_pacakage.tour_tags_id ='${data.tour_tags_id}'`;
         } 
 
     }
     
     
-    console.log(countQuery);
+    console.log(selectQuery);
     if(typeof data.page !== 'undefined'){
         console.log(data.page);
         selectQuery += ` LIMIT ${limit} OFFSET ${offset}`;  
@@ -650,7 +891,7 @@ var getTourByTag=async(tag_id,cat_id)=>
     console.log("getTourByTag "+tag_id);
 
     //if(typeof tag_id !== 'undefined' && tag_id.length>0){
-        selectQuery += ` where tour_pacakage.tour_tags_id ='${tag_id}'`;
+        selectQuery += ` where tour_pacakage.is_deleted=0 and tour_pacakage.tour_tags_id ='${tag_id}'`;
     //} 
 
     if(typeof cat_id !== 'undefined' && cat_id.length>0){
@@ -668,12 +909,12 @@ var getTourByTag=async(tag_id,cat_id)=>
         
     } catch(err) {   
         console.log(err);
-        res.status(statusConfig.status.error)
+        /*res.status(statusConfig.status.error)
         .json({ 
             status: statusConfig.errorMessage.status,
             data: err,
             message: statusConfig.errorMessage.something_went
-        });
+        });*/
     } 
 }
 
@@ -732,7 +973,7 @@ var getTourTags=async()=>
     
 
     try{
-        var getData = await db.pool.query("select * from tour_tags order by tour_tags_id desc")
+        var getData = await db.pool.query("select * from tour_tags where is_deleted=0 order by tour_tags_id desc")
 
         return getData.rows;
         
@@ -747,3 +988,60 @@ var getTourTags=async()=>
     } 
 }
 
+
+//Delete Tour image
+module.exports.deleteTourImage= async (req, res) => {
+
+    
+     try{
+        
+        var deleteImage=`delete from tour_pacakage_images`;
+        deleteImage+=` where tour_pacakage_images_id ='${req.params.id}'`;
+        var getData = await db.pool.query(deleteImage);
+        res.status(200).json({   
+            status: statusConfig.successMessage.status,
+            message: 'Tour image delete',
+             
+        });
+            
+        
+        
+    } catch(err) {   
+        console.log(err);
+        res.status(statusConfig.status.error)
+        .json({ 
+            status: statusConfig.errorMessage.status,
+            data: err,
+            message: statusConfig.errorMessage.something_went
+        });
+    } 
+    
+}
+
+//Delete Tours
+
+module.exports.deletePackage=async (req, res) => {
+
+    try{
+        
+        var deleteImage=`update tour_pacakage set is_deleted=1`;
+        deleteImage+=` where tour_pacakage_id ='${req.params.tour_pacakage_id}'`;
+        var getData = await db.pool.query(deleteImage);
+        res.status(200).json({   
+            status: statusConfig.successMessage.status,
+            message: 'Tour  deleted',
+             
+        });
+            
+        
+        
+    } catch(err) {   
+        console.log(err);
+        res.status(statusConfig.status.error)
+        .json({ 
+            status: statusConfig.errorMessage.status,
+            data: err,
+            message: statusConfig.errorMessage.something_went
+        });
+    } 
+}

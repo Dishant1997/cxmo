@@ -1,17 +1,18 @@
 const ethUtil = require('ethereumjs-util');
 const web3 = require('../web3')
-const config = require('config');
+var config = require('../config/default.json').common;
 const axios = require('axios');
 const ethers = require('ethers');
 var moment = require('moment');
 var Tx = require('ethereumjs-tx')
 const db = require('../models');
+const { handleResponse, handleError } = require('../middleware/responsehandler');
 
-const infuraKey = config.get('common.infuraKey');
-const etherscanKey = config.get('common.etherscanKey');
-const etherscanUrl = config.get('common.etherscanUrl');
-const masterAddress = config.get('common.masterAddress');
-const masterKey = config.get('common.masterPrivateKey');
+
+const etherscanKey = config.etherscanKey;
+const etherscanUrl = config.etherscanUrl;
+const masterAddress = config.masterAddress;
+const masterKey = config.masterPrivateKey;
 
 
 module.exports = {
@@ -23,7 +24,7 @@ getBalance: async (address, token) => {
         if (token == "FAUToken") {
             balance = Number(balance) / (10 ** 18)
         } else if (token == "USDCToken") {
-            balance = Number(balance);
+            balance = Number(balance) / 10 ** 6;
         } else {
             balance = Number(balance);
         }
@@ -54,9 +55,17 @@ getTokenInfo: async (token) => {
 
 getTxList: async (address, tokenAdd) => {
     let tokenAddress = tokenAdd
-
+    let contractAddress = '0xac7fa82f7b2937b0714a61c84fa9902224ad5a65'
     try {
-        const contractAddress = config.get('common.' + tokenAddress)
+        if (tokenAddress == "USDCTokenAddress") {
+             contractAddress = config.USDCTokenAddress;
+        } else if (tokenAddress == "FAUTokenAddress") {
+             contractAddress = config.FAUTokenAddress;
+        } else if (tokenAddress == "WBTCTokenAddress") {
+             contractAddress = config.WBTCTokenAddress;
+        } else if (tokenAddress == "RenBTCTokenAddress") {
+             contractAddress = config.RenBTCTokenAddress;
+        }
         let txList = await axios(etherscanUrl + 'api?module=account&action=tokentx&contractaddress=' + contractAddress + '&address=' + address + '&page=1&offset=100&sort=asc&apikey=' + etherscanKey + '')
 
         //https://api-ropsten.etherscan.io/api?module=account&action=tokentx&contractaddress=0xFab46E002BbF0b4509813474841E0716E6730136&address=0x3126D8380aB928aa357912DDFA60E4c225e53dF3&page=1&offset=100&sort=asc&apikey=TRF47IEMM99Y2GIF1RQP8Z39BDUA21MPY9
@@ -140,7 +149,17 @@ tokenTransfer: async (privateKey, fromAddress, toAddress, amount, token, tokenAd
             }
 
         } else {
-            const contractAddress = config.get('common.' + tokenAddress);
+            let contractAddress = '0xac7fa82f7b2937b0714a61c84fa9902224ad5a65'
+
+            if (tokenAddress == "USDCTokenAddress") {
+                contractAddress = config.USDCTokenAddress;
+           } else if (tokenAddress == "FAUTokenAddress") {
+                contractAddress = config.FAUTokenAddress;
+           } else if (tokenAddress == "WBTCTokenAddress") {
+                contractAddress = config.WBTCTokenAddress;
+           } else if (tokenAddress == "RenBTCTokenAddress") {
+                contractAddress = config.RenBTCTokenAddress;
+           }
             let Token = require('../' + tokenName);
             var rawTx = {
                 nonce: web3.utils.toHex(nonce),
@@ -167,7 +186,7 @@ tokenTransfer: async (privateKey, fromAddress, toAddress, amount, token, tokenAd
     }
 },
 
-rewardTransfer: async (toAddress, amount, token, tokenAdd, gasPrices) => {
+rewardTransfer: async (toAddress, amount, token, tokenAdd, gasPrices, res) => {
 
     let tokenName = token;
     let tokenAddress = tokenAdd;
@@ -185,18 +204,28 @@ rewardTransfer: async (toAddress, amount, token, tokenAdd, gasPrices) => {
         const nonce = await web3.eth.getTransactionCount(masterAddress)
 
         if (tokenName == "ETHToken") {
-            var rawTx = {
+            var rawTx = {   
                 nonce: web3.utils.toHex(nonce),
                 from: masterAddress,
-                gasPrice: gasPrices.low * 1000000000, 
+                gasPrice: gasPrices.high * 1000000500, 
                 gasLimit: web3.utils.toHex('3000000'),
                 to: toAddress,
                 value: web3.utils.toHex( web3.utils.toWei(Amount, 'ether') ),
             }
-
         } else {
-            const contractAddress = config.get('common.' + tokenAddress);
-            let Token = require('../' + tokenName);
+            let contractAddress = '0xac7fa82f7b2937b0714a61c84fa9902224ad5a65'
+
+            if (tokenAddress == "USDCTokenAddress") {
+                contractAddress = config.USDCTokenAddress;
+           } else if (tokenAddress == "FAUTokenAddress") {
+                contractAddress = config.FAUTokenAddress;
+           } else if (tokenAddress == "WBTCTokenAddress") {
+                contractAddress = config.WBTCTokenAddress;
+           } else if (tokenAddress == "RenBTCTokenAddress") {
+                contractAddress = config.RenBTCTokenAddress;
+           }
+            
+           let Token = require('../' + tokenName);
             var rawTx = {
                 nonce: web3.utils.toHex(nonce),
                 from: masterAddress,
@@ -209,14 +238,18 @@ rewardTransfer: async (toAddress, amount, token, tokenAdd, gasPrices) => {
         }
         var tx = new Tx(rawTx, { 'chain': 'ropsten' });
         tx.sign(privateKey);
-
         var serializedTx = await tx.serialize();
+        // let result = await web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'))
+        //     .on('receipt', console.log);
+        let result = await web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'), function(error, txhash){
+            if(error){
+                return handleResponse({ res, msg: `Transaction failed: wallet does not have enough balance`, data: error });
+            } else {
+                console.log("TxHash",txhash)
+            }
+        }).on('receipt', console.log);
 
-        let result = await web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'))
-            .on('receipt', console.log);
-
-        return result
-
+        return result;
     } catch (err) {
         return false
     }
@@ -250,7 +283,17 @@ paymentTransfer: async (privateKey, fromAddress, amount, token, tokenAdd, gasPri
             }
 
         } else {
-            const contractAddress = config.get('common.' + tokenAddress);
+            let contractAddress = '0xac7fa82f7b2937b0714a61c84fa9902224ad5a65'
+
+            if (tokenAddress == "USDCTokenAddress") {
+                contractAddress = config.USDCTokenAddress;
+           } else if (tokenAddress == "FAUTokenAddress") {
+                contractAddress = config.FAUTokenAddress;
+           } else if (tokenAddress == "WBTCTokenAddress") {
+                contractAddress = config.WBTCTokenAddress;
+           } else if (tokenAddress == "RenBTCTokenAddress") {
+                contractAddress = config.RenBTCTokenAddress;
+           }
             let Token = require('../' + tokenName);
             var rawTx = {
                 nonce: web3.utils.toHex(nonce),
@@ -263,13 +306,14 @@ paymentTransfer: async (privateKey, fromAddress, amount, token, tokenAdd, gasPri
             }
         }
         var tx = new Tx(rawTx, { 'chain': 'ropsten' });
+
         tx.sign(privateKey);
 
         var serializedTx = await tx.serialize();
 
         let result = await web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'))
             .on('receipt', console.log);
-
+        
         return result;
 
     } catch (err) {
@@ -277,13 +321,13 @@ paymentTransfer: async (privateKey, fromAddress, amount, token, tokenAdd, gasPri
     }
 },
 
-storeTransaction: async (fromAddress, toAddress, amount, transaction, type, currency) => {
+storeTransaction: async (userId, fromAddress, toAddress, amount, transaction, type, currency) => {
     try {
         var insertQuery ='';
         var set = []; var value = [];
 
         set.push('user_id');
-        value.push(`'${60}'`); 
+        value.push(`'${userId}'`); 
 
         set.push('tr_hash');
         value.push(`'${transaction.transactionHash}'`); 
@@ -346,15 +390,45 @@ getWallet: async (userId) => {
     }
 },
 
+getPortfolio: async (userId) => {
+    try {
+        var selectQuery = `select portfolio_value from users where user_id = '${userId}'`;
+        var getData = await db.pool.query(selectQuery);
+   
+        if (!getData){
+            return false;
+        } else {
+            return getData.rows[0].portfolio_value;
+        }
+    } catch (err) {
+        return err;
+    }
+},
+
 getPrivateKey: async (mnemonic) => {
     try {
         let mnemonicWallet = ethers.Wallet.fromMnemonic(mnemonic);
         let privateKey = mnemonicWallet.privateKey;
    
         if (!privateKey){
+                return false;
+            } else {
+                return privateKey;
+            }
+    } catch (err) {
+        return err;
+    }
+},
+
+storePortfolio: async (userId, portfolio) => {
+    try {
+        var updateQuery = `UPDATE users SET portfolio_value = '${portfolio}' where user_id = '${userId}'`;
+        var updateData = await db.pool.query(updateQuery);
+   
+        if (!updateData){
             return false;
         } else {
-            return privateKey;
+            return updateData.rows[0];
         }
     } catch (err) {
         return err;

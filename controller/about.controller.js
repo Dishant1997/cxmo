@@ -1,10 +1,11 @@
 const db = require('../models');
 const statusConfig = require('../helpers/status');
 const common = require('../helpers/common');
+const express = require('express');
 const { check, validationResult } = require('express-validator');
 //update about us 
 module.exports.updateAbout = async (req, res) => { 
-    // console.log(req.userId);
+    
     const updateQuery = "UPDATE configuration SET about_us = $1 WHERE id = '1' returning *";
     const values = [ 
         req.body.about_us
