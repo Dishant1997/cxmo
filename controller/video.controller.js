@@ -170,28 +170,34 @@ const videoDetail=async(req,res) => {
 
 }
 const getVideo = async(req, res) => {
+    console.log("getVideo");
     const data = req.body; var selectQuery = ''; 
     var selectQuery = '';
     let page = (data.page) ? data.page:1;
-    let limit = (data.limit) ? data.limit:1;  
+   // let limit = (data.limit) ? data.limit:1;  
+    let limit = 20; 
     let offset = (page-1)*limit;
     
     selectQuery = 'select * from videos where is_deleted=0';
     if(typeof data.video_cat_id !== 'undefined' && data.video_cat_id.length>0){
-        selectQuery += `and video_cat_id ='${data.video_cat_id}'`;
+        selectQuery += ` and video_cat_id ='${data.video_cat_id}'`;
     } 
-
+    let countQuery=`select count(*) from videos where is_deleted=0`;
     selectQuery += ` ORDER BY video_id desc  `;
+    console.log(selectQuery);
     if(typeof data.page !== 'undefined'){
         console.log(data.page);
         selectQuery += ` LIMIT ${limit} OFFSET ${offset}`;  
     }  
     try{
         var getData = await db.pool.query(selectQuery);  
+        var countData = await db.pool.query(countQuery); 
+        console.log("countData.rows[0].count "+countData.rows[0].count)
         if(getData.rows.length>0){ 
             res.status(200).json({   
                 status: statusConfig.successMessage.status,
                 message: 'Records are found',
+                total:countData.rows[0].count,
                 video_path :  req.protocol+'s://'+req.headers.host+'/uploads/', 
                 data:getData.rows 
             });    
@@ -208,6 +214,7 @@ const getVideo = async(req, res) => {
         res.status(statusConfig.status.error)
         .json({ 
             status: statusConfig.errorMessage.status,
+           
             data: err,
             message: statusConfig.errorMessage.something_went
         });

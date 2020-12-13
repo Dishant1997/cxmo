@@ -22,9 +22,10 @@ var uploadImageToStorage =async(file)=>
     if (!file) {
         return null;
       }
-      var file_name=(file.originalname.trim());
+      console.log("blobStream "+file.originalname);
+      var file_name=(file.originalname.replace(/\s/g,'').trim());
       let newFileName = `${Date.now()}_${file_name}`;
-
+      console.log("blobStream "+newFileName.replace(/\s/g,''));
     let fileUpload = bucket.file(newFileName);
 
 

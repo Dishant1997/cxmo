@@ -104,7 +104,7 @@ module.exports.deleteCategor=async (req, res) => {
 
 
 module.exports.deleteTag=async (req, res) => {
-
+        console.log("deleteTag");
     try{
         var getCatory=`select count(*) from tour_tags  where tour_tags_id = '${req.params.tour_tags_id}'`;
         var getData=await db.pool.query(getCatory);
@@ -281,7 +281,7 @@ module.exports.updateTourTag = async (req, res) => {
     
     updateQuery += ` tag_name ='${data.tag_name}'`; 
 
-    updateQuery += ` where tour_tags_id = '${data.tag_name}'`; 
+    updateQuery += ` where tour_tags_id = '${data.tour_tags_id}'`; 
     console.log("updateQuery "+updateQuery);
     var getData = await db.pool.query(updateQuery)
     .then(function (data) { 

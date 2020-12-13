@@ -60,34 +60,27 @@ const masterAddress = config.masterAddress;
 
   exports.balanceAdmin = async (req, res) => {
     try {
+      console.log(masterAddress)
       const EtherBalance = await getEtherBalance(masterAddress);
+      console.log("ETHER BALANCE", EtherBalance)
       const USDCBalance = await getBalance(masterAddress,'USDCToken');
       const FAUBalance = await getBalance(masterAddress,'FAUToken');
       const WBTCBalance = await getBalance(masterAddress,'WBTCToken');
       const RenBTCBalance = await getBalance(masterAddress,'RenBTCToken');
 
-      let warnings = [];
       if(EtherBalance<=1) {
-        warnings.push("Ether Balance low: " + EtherBalance)
-      }
-      if (USDCBalance<=1) {
-        warnings.push("USDC Balance low: " + USDCBalance)
-      } 
-      if (FAUBalance<=1) {
-        warnings.push("FAU Balance low: " + FAUBalance)
-      }
-     if (WBTCBalance<=1) {
-        warnings.push("WBTC Balance low: " + WBTCBalance)
-      }
-     if (RenBTCBalance<=1) {
-        warnings.push("RenBTC Balance low: " + RenBTCBalance)
+        return handleError({ res, msg: `Ether Balance Low:`, data: EtherBalance });
+      } else if (USDCBalance<=1) {
+        return handleError({ res, msg: `USDC Balance Low:`, data: "low USDC Balance" });
+      } else if (FAUBalance<=1) {
+        return handleError({ res, msg: `FAU Balance Low:`, data: "low FAU Balance" });
+      } else if (WBTCBalance<=1) {
+        return handleError({ res, msg: `WBTC Balance Low:`, data: "Low WBTC Balance" });
+      } else if (RenBTCBalance<=1) {
+        return handleError({ res, msg: `RenBTC Balance Low:`, data: "Low RenBTC Balance" });
       }
 
-      if (warnings) {
-        return handleError({ res, msg: `Warnings:`, data: warnings });
-      } else { 
-        return handleResponse({ res, msg: `No action required:`, data: "true" });
-      }
+      return handleResponse({ res, msg: `No action required:`, data: "true" });
 
     } catch (err) {
       handleError({

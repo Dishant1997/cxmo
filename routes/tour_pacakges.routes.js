@@ -20,7 +20,8 @@ const {
     deletePackage,
     deleteCategor,
     addTourTags,
-    updateTourTag
+    updateTourTag,
+    deleteTag
     
 } = require('../controller/tour_pacakage.controller');
 
@@ -87,7 +88,7 @@ router.delete('/delete/:tour_pacakage_id',VerifyToken,deletePackage);
 router.post('/tags/add',VerifyToken,[
     check('tag_name').isLength({ min: 1 })],     addTourTags
 );
-router.delete('/tags/delete/:tour_tags_id',VerifyToken,deletePackage);
+router.delete('/tags/:tour_tags_id',VerifyToken,deleteTag);
 
 router.post('/tags/update',VerifyToken,[
     check('tag_name').isLength({ min: 1 }).withMessage('Tour name is required'),check('tour_tags_id').isLength({ min: 1 })
